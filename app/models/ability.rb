@@ -8,7 +8,7 @@ class Ability
       can :manage, :all
       # доступ в админ-панель, если понадобится:
       can :access, :rails_admin
-      can :dashboard
+      #can :dashboard
     elsif user.editor?
       can :read, :all
       can [:create, :update], Article

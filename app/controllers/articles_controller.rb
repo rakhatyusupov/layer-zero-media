@@ -5,11 +5,6 @@ class ArticlesController < ApplicationController
   # CanCanCan: автоматически загружает ресурс и проверяет права
   load_and_authorize_resource
 
-  # Если прав нет — перенаправляем
-  rescue_from CanCan::AccessDenied do |exception|
-    redirect_to root_path, alert: exception.message
-  end
-
   # GET /articles
   def index
     # @articles загружается автоматически из load_and_authorize_resource
