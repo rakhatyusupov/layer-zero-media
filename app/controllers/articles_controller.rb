@@ -1,70 +1,61 @@
 class ArticlesController < ApplicationController
-  before_action :set_article, only: %i[ show edit update destroy ]
+  # Devise: требуем вход в систему перед любыми действиями
+  before_action :authenticate_user!
 
-  # GET /articles or /articles.json
+  # CanCanCan: автоматически загружает ресурс и проверяет права
+  load_and_authorize_resource
+
+  # Если прав нет — перенаправляем
+  rescue_from CanCan::AccessDenied do |exception|
+    redirect_to root_path, alert: exception.message
+  end
+
+  # GET /articles
   def index
-    @articles = Article.all
+    # @articles загружается автоматически из load_and_authorize_resource
+    # Если хочешь фильтровать, можешь добавить:
+    # @articles = Article.accessible_by(current_ability)
   end
 
-  # GET /articles/1 or /articles/1.json
-  def show
-  end
+  # GET /articles/1
+  def show; end
 
   # GET /articles/new
-  def new
-    @article = Article.new
-  end
+  def new; end
 
   # GET /articles/1/edit
-  def edit
-  end
+  def edit; end
 
-  # POST /articles or /articles.json
+  # POST /articles
   def create
-    @article = Article.new(article_params)
+    # load_and_authorize_resource создаёт @article
+    @article.user = current_user # если у статьи есть автор
 
-    respond_to do |format|
-      if @article.save
-        format.html { redirect_to @article, notice: "Article was successfully created." }
-        format.json { render :show, status: :created, location: @article }
-      else
-        format.html { render :new, status: :unprocessable_entity }
-        format.json { render json: @article.errors, status: :unprocessable_entity }
-      end
+    if @article.save
+      redirect_to @article, notice: "Article was successfully created."
+    else
+      render :new, status: :unprocessable_entity
     end
   end
 
-  # PATCH/PUT /articles/1 or /articles/1.json
+  # PATCH/PUT /articles/1
   def update
-    respond_to do |format|
-      if @article.update(article_params)
-        format.html { redirect_to @article, notice: "Article was successfully updated.", status: :see_other }
-        format.json { render :show, status: :ok, location: @article }
-      else
-        format.html { render :edit, status: :unprocessable_entity }
-        format.json { render json: @article.errors, status: :unprocessable_entity }
-      end
+    if @article.update(article_params)
+      redirect_to @article, notice: "Article was successfully updated.", status: :see_other
+    else
+      render :edit, status: :unprocessable_entity
     end
   end
 
-  # DELETE /articles/1 or /articles/1.json
+  # DELETE /articles/1
   def destroy
-    @article.destroy!
-
-    respond_to do |format|
-      format.html { redirect_to articles_path, notice: "Article was successfully destroyed.", status: :see_other }
-      format.json { head :no_content }
-    end
+    @article.destroy
+    redirect_to articles_path, notice: "Article was successfully destroyed.", status: :see_other
   end
 
   private
-    # Use callbacks to share common setup or constraints between actions.
-    def set_article
-      @article = Article.find(params.expect(:id))
-    end
 
-    # Only allow a list of trusted parameters through.
-    def article_params
-      params.expect(article: [ :title, :content ])
-    end
+  def article_params
+    params.require(:article).permit(:title, :content)
+  end
 end
